@@ -87,16 +87,13 @@ let credentials = {
 let client = new SwiftClient(new SwiftClient.KeystoneV3Authenticator(credentials));
 ```
 
-#### `SwiftClient#list(extra, query)`
+#### `SwiftClient#list(extra)`
 
 Gets an array of containers.
 
 | Argument | Description |
 |----------|-------------|
 | `extra` | a hash of additional headers to send (optional) |
-| `query` | a query string or hash of additional query parameters to send (optional) |
-
-[Query parameters](https://developer.openstack.org/api-ref/object-store/#show-account-details-and-list-containers) can be used to filter the result, e.g. list a pseudo-directory.
 
 **Example**
 
@@ -229,13 +226,16 @@ await client.info();
 
 ### `SwiftContainer` class
 
-#### `SwiftContainer#list(extra)`
+#### `SwiftContainer#list(extra, query)`
 
 Gets an array of objects in the container.
 
 | Argument | Description |
 |----------|-------------|
 | `extra` | a hash of additional headers to send (optional) |
+| `query` | a query string or hash of additional query parameters to send (optional) |
+
+[Query parameters](https://developer.openstack.org/api-ref/object-store/#show-account-details-and-list-containers) can be used to filter the result, e.g. list a pseudo-directory.
 
 **Example**
 

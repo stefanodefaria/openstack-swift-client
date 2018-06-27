@@ -1,6 +1,7 @@
 "use strict";
 
 const requestp = require('request-promise');
+const queryString = require('query-string');
 
 class SwiftEntity {
     constructor(childName, urlSuffix, authenticator) {
@@ -9,9 +10,10 @@ class SwiftEntity {
         this.authenticator = authenticator;
     }
 
-    list(extra) {
+    list(extra, query = '') {
+        const querystring = ( query ) ? '?'+queryString.stringify(query) : query;
         return this.authenticator.authenticate().then(auth => requestp({
-            uri: auth.url + this.urlSuffix,
+            uri: auth.url + this.urlSuffix + querystring,
             headers: this.headers(null, extra, auth.token),
             json: true
         }));

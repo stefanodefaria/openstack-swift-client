@@ -55,17 +55,27 @@ describe('SwiftClient', function () {
         before(() => {
             container = client.container('swift-client-test');
 
-            const s = fs.createReadStream('test/test.txt');
-            return container.create('test.txt', s);
+            const s1 = fs.createReadStream('test/test1.txt');
+            const s2 = fs.createReadStream('test/test2.txt');
+            return container.create('test.txt', s1)
+              .then(() => container.create('sub/test.txt', s2));
         });
 
         after(() => container.delete('test.txt'));
+        after(() => container.delete('sub/test.txt'));
 
         describe('#list', () => {
             it('should return a list of objects', () => container.list()
                 .then(objects => {
+                    expect(objects).to.have.length(2);
+                    expect(objects[0].name).to.equal('sub/test.txt');
+                    expect(objects[1].name).to.equal('test.txt');
+                }));
+            it('should return a pseudo-directory content',
+              () => container.list(null, {delimiter: '/', prefix: 'sub/'})
+                .then(objects => {
                     expect(objects).to.have.length(1);
-                    expect(objects[0].name).to.equal('test.txt');
+                    expect(objects[0].name).to.equal('sub/test.txt');
                 }));
         });
 

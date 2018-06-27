@@ -87,14 +87,16 @@ let credentials = {
 let client = new SwiftClient(new SwiftClient.KeystoneV3Authenticator(credentials));
 ```
 
-#### `SwiftClient#list(extra)`
+#### `SwiftClient#list(extra, query)`
 
 Gets an array of containers.
 
 | Argument | Description |
 |----------|-------------|
 | `extra` | a hash of additional headers to send (optional) |
+| `query` | a query string or hash of additional query parameters to send (optional) |
 
+[Query parameters](https://developer.openstack.org/api-ref/object-store/#show-account-details-and-list-containers) can be used to filter the result, e.g. list a pseudo-directory.
 
 **Example**
 
@@ -215,7 +217,7 @@ await client.info();
 {
   bulk_delete: { max_failed_deletes: 1000, max_deletes_per_request: 10000 },
   (...),
-  swift: 
+  swift:
    { max_file_size: 5368709122,
      account_listing_limit: 10000,
      (...),
@@ -242,7 +244,7 @@ await container.list();
 
 /* returns:
 [
-  { 
+  {
       hash: '03b3aac569fab8b59dcf8f210f8d3bc8',
       last_modified: '2017-03-31T13:27:56.042120',
       bytes: 102400,

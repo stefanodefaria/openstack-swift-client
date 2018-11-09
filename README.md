@@ -356,3 +356,38 @@ Deletes the specified object.  If `when` is a `Date`, the object is deleted at t
 // delete the object in 2 minutes time
 await container.delete('books/darkness-at-noon.txt', 120);
 ```
+
+
+#### `SwiftContainer#createStaticLargeObject(name, manifestList, meta, extra)`
+
+Creates the static large object(SLO).
+
+| Argument | Description |
+|----------|-------------|
+| `name` | the name of the container to update |
+| `manifestList` | the list of the part file information |
+| `meta` | a hash of meta information to set on the container |
+| `extra` | a hash of additional headers to send (optional) |
+
+**Example**
+
+```js
+
+let stream = fs.createReadStream('darkness-at-noon.txt');
+
+let manifestList = []
+
+for(let i = 0; i < partLength; i++) {
+  let { etag } = await container.create(`ticktok.txt.part${i}`, stream);
+  manifestList.push({
+    path: `CONTAINER_NAME/ticktok.txt.part${i}`,
+    etag,
+    size_bytes: FILE_SIZE_BYTES
+  });
+}
+
+await container.createStaticLargeObject('SLO_FILE_NAME',
+  manifestList)
+
+
+```

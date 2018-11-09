@@ -20,7 +20,9 @@ class SwiftContainer extends SwiftEntity {
                 reject(err);
             }).on('response', response => {
                 if (response.statusCode === 201) {
-                    resolve();
+                    resolve({
+                        etag: response.headers.etag
+                    });
                 } else {
                     reject(new Error(`HTTP ${response.statusCode}`));
                 }
@@ -68,6 +70,30 @@ class SwiftContainer extends SwiftEntity {
             }).on('end', () => {
                 resolve();
             }).pipe(stream);
+        }));
+    }
+    
+    createStaticLargeObject(name, manifestList, meta, extra) {
+        // for manifestList
+        extra = Object.assign({
+            'content-type': 'application/json'
+        }, extra);
+
+        return this.authenticator.authenticate().then(auth => new Promise((resolve, reject) => {
+            request({
+                uri: `${auth.url + this.urlSuffix}/${name}?multipart-manifest=put`,
+                method: 'PUT',
+                headers: this.headers(meta, extra, auth.token),
+                json: manifestList
+            }).on('error', err => {
+                reject(err);
+            }).on('response', response => {
+                if (response.statusCode === 201) {
+                    resolve(response);
+                } else {
+                    reject(new Error(`HTTP ${response.statusCode}`));
+                }
+            });
         }));
     }
 }

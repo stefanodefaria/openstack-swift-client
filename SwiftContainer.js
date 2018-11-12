@@ -2,6 +2,7 @@
 
 const request = require('request');
 const requestp = require('request-promise');
+const queryString = require('query-string');
 const SwiftEntity = require('./SwiftEntity');
 
 class SwiftContainer extends SwiftEntity {
@@ -9,13 +10,26 @@ class SwiftContainer extends SwiftEntity {
         super('Object', containerName, authenticator);
     }
 
-    create(name, stream, meta, extra) {
+    create({
+        name = null,
+        stream = null,
+        meta = null,
+        extra = null,
+        query = null,
+        content = null
+    }) {
+        if(!name || name == '')
+            throw new Error('Name must not be empty');
+        if(!stream)
+            throw new Error('FileStream must not be empty');
+        const querystring = query ? '?' + queryString.stringify(query) : '';
 
         return this.authenticator.authenticate().then(auth => new Promise((resolve, reject) => {
             const req = request({
                 method: 'PUT',
-                uri: `${auth.url + this.urlSuffix}/${name}`,
-                headers: this.headers(meta, extra, auth.token)
+                uri: `${auth.url + this.urlSuffix}/${name}` + querystring,
+                headers: this.headers(meta, extra, auth.token),
+                json: content
             }).on('error', err => {
                 reject(err);
             }).on('response', response => {
@@ -29,10 +43,19 @@ class SwiftContainer extends SwiftEntity {
             });
 
             stream.pipe(req);
+
         }));
     }
 
-    delete(name, when) {
+    delete({
+        name = null,
+        when = null,
+        query = null
+    }) {
+        if(!name || name == '')
+            throw new Error('Name must not be empty');
+        const querystring = query ? '?' + queryString.stringify(query) : '';
+
         if (when) {
             const h = {};
 
@@ -47,21 +70,35 @@ class SwiftContainer extends SwiftEntity {
             return this.authenticator.authenticate().then(auth => {
                 return requestp({
                     method: 'POST',
-                    uri: `${auth.url + this.urlSuffix}/${name}`,
+                    uri: `${auth.url + this.urlSuffix}/${name}` + querystring,
                     headers: this.headers(null, h, auth.token)
                 });
             });
 
         } else {
-            return SwiftEntity.prototype.delete.call(this, name);
+            return this.authenticator.authenticate().then(auth => requestp({
+                method: 'DELETE',
+                uri: `${auth.url + this.urlSuffix}/${name}` + querystring,
+                headers: this.headers(null, null, auth.token)
+            }));
         }
     }
 
-    get(name, stream) {
+    get({
+        name = null,
+        stream = null,
+        query = null
+    }) {
+        if(!name || name == '')
+            throw new Error('Name must not be empty');
+        if(!stream)
+            throw new Error('FileStream must not be empty');
+        
+        const querystring = query ? '?' + queryString.stringify(query) : '';
         return this.authenticator.authenticate().then(auth => new Promise((resolve, reject) => {
             request({
                 method: 'GET',
-                uri: `${auth.url + this.urlSuffix}/${name}`,
+                uri: `${auth.url + this.urlSuffix}/${name}` + querystring,
                 headers: {
                     'x-auth-token': auth.token
                 }
@@ -70,32 +107,9 @@ class SwiftContainer extends SwiftEntity {
             }).on('end', () => {
                 resolve();
             }).pipe(stream);
-        }));
+        }));  
     }
-    
-    createStaticLargeObject(name, manifestList, meta, extra) {
-        // for manifestList
-        extra = Object.assign({
-            'content-type': 'application/json'
-        }, extra);
 
-        return this.authenticator.authenticate().then(auth => new Promise((resolve, reject) => {
-            request({
-                uri: `${auth.url + this.urlSuffix}/${name}?multipart-manifest=put`,
-                method: 'PUT',
-                headers: this.headers(meta, extra, auth.token),
-                json: manifestList
-            }).on('error', err => {
-                reject(err);
-            }).on('response', response => {
-                if (response.statusCode === 201) {
-                    resolve(response);
-                } else {
-                    reject(new Error(`HTTP ${response.statusCode}`));
-                }
-            });
-        }));
-    }
 }
 
 module.exports = SwiftContainer;

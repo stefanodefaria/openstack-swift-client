@@ -258,7 +258,7 @@ await container.list();
 ```
 
 
-#### `SwiftContainer#create(name, stream, meta, extra)`
+#### `SwiftContainer#create({name, stream, meta, extra, query, content})`
 
 Creates an object.
 
@@ -268,20 +268,50 @@ Creates an object.
 | `stream` | a stream representing the file to upload |
 | `meta` | a hash of meta information to set on the object (optional) |
 | `extra` | a hash of additional headers to send (optional) |
+| `query` | a query string or hash of additional query parameters to send (optional) |
+| `content` | data of additional body to send (optional) |
+
 
 
 **Example**
 
 ```js
+// Small Single File
 let stream = fs.createReadStream('darkness-at-noon.txt');
 
-await container.create('books/darkness-at-noon.txt',
-  stream, {author: 'Arthur Koestler'});
+await container.create({
+  name: 'books/darkness-at-noon.txt',
+  stream,
+  meta: {
+    author: 'Arthur Koestler'
+  }
+})
+
+
+// SLO (Static Large Object) File
+let manifestList = []
+
+for(let i = 0; i < partLength; i++) {
+  let { etag } = await container.create(`ticktok.txt.part${i}`, PART_STREAM);
+  manifestList.push({
+    path: `CONTAINER_NAME/ticktok.txt.part${i}`,
+    etag,
+    size_bytes: FILE_SIZE_BYTES
+  });
+}
+
+await container.create({
+  name: 'ticktok.txt',
+  query: {
+    'multipart-manifest': 'put'
+  },
+  content: manifestList
+})
 ```
 
 
 
-#### `SwiftContainer#get(name, stream)`
+#### `SwiftContainer#get({name, stream})`
 
 Gets an object.
 
@@ -289,13 +319,17 @@ Gets an object.
 |----------|-------------|
 | `name` | the name of the object to get |
 | `stream` | a stream to pipe the object to |
+| `query` | a query string or hash of additional query parameters to send (optional) |
 
 
 **Example**
 
 ```js
 let stream = fs.createWriteStream('darkness-at-noon.txt');
-await container.get('books/darkness-at-noon.txt', stream);
+await container.get({
+  name: 'books/darkness-at-noon.txt',
+  stream
+});
 ```
 
 
@@ -341,7 +375,7 @@ meta is a hash of metadata, e.g.
 ```
 
 
-#### `SwiftContainer#delete(name, when)`
+#### `SwiftContainer#delete({name, when, query})`
 
 Deletes the specified object.  If `when` is a `Date`, the object is deleted at that date; if it is a number, the object is deleted after that many seconds; or if it is ommitted, the object is deleted immediately.
 
@@ -349,11 +383,25 @@ Deletes the specified object.  If `when` is a `Date`, the object is deleted at t
 |----------|-------------|
 | `name` | the name of the object to delete |
 | `when` | a `Date` representing when the object is to be deleted, or a number of seconds the object is to be deleted after (optional) |
+| `query` | a query string or hash of additional query parameters to send (optional) |
 
 
 **Example**
 
 ```js
 // delete the object in 2 minutes time
-await container.delete('books/darkness-at-noon.txt', 120);
+await container.delete({
+  name: 'books/darkness-at-noon.txt',
+  when: 120
+});
+
+
+// delete SLO (Static Large Object) File
+await container.delete({
+  name: 'books/darkness-at-noon.txt',
+  query: {
+    'multipart-manifest': 'delete'
+  }
+})
+
 ```
